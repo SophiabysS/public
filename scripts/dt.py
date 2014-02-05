@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
-"""dt, data tabulation; (c) Jeremy R. Gray 2009, jrgray@gmail.com; distributed under GPLv3
+"""dt, data tabulation in python
+    (c) Jeremy R. Gray 2009, 2014, jrgray@gmail.com; distributed under GPLv3
 
-       descriptive stats within cells defined by labels-in-columns
-       giving flexible control over data reduction
+    calculate descriptive stats within cells defined by labels-in-columns
+    giving flexible control over data reduction
+
+    2014: add m (difference score) option
 """
 
 import sys
 import math  # only for log()
 
-#import scipy, numpy  # nice, but I avoid them for portability
+#import scipy, numpy  # nice, but I avoid them for portability, like CentOS 5.x on my server
 
 def MEAN_SD_SE(x):
     """return (mean, st.dev., std.err.) of list"""
@@ -109,7 +112,7 @@ while sys.argv:
     if arg in ('d', 's', 'c', 'ct', 'r', 't', 'p', 'x', '+', 'm', '--file'): # expect another arg
         try:
             str_val = sys.argv.pop(0)
-        except:
+        except IndexError:
             print "%s: option %s requires a value (%s #)" % \
                   (this_script, arg, arg)
             sys.exit(1)
@@ -117,17 +120,15 @@ while sys.argv:
         if arg in ['d', 's', 'c', 'ct', 'r', 't', 'p', 'm']:  # expects an int()
             try:
                 int_val = int(str_val)
-            except:
+            except ValueError:
                 print "%s: option %s requires an integer (%s #):" % \
                     (this_script, arg, arg)
                 sys.exit(1)
-        if arg in ['x', '+']:  # expects a float()
+        elif arg in ['x', '+']:  # expects a float()
             try:
                 float_val = float(str_val)
-            except:
-                print "%s: option %s requires a float (%s #):" % \
-                    (this_script, arg, arg)
-                sys.exit(1)
+            except ValueError:
+                sys.exit("%s: option %s requires a float (%s #):" % (this_script, arg, arg))
 
     if arg == 't':
         tcols.append(int_val)
@@ -167,7 +168,7 @@ while sys.argv:
     elif arg == '--factor': do_factor = 1
     elif arg == '--file': filename = str_val
     elif arg in ['h', '-h', '--help', '--usage']:
-        print "\ndt [", this_script, "],   data tabulator, Jeremy R. Gray 2009\n"
+        print "\ndt [", this_script, "],   data tabulator, Jeremy R. Gray 2009, 2014\n"
         print """purpose:  data reduction within cells as defined by (multiple) text labels
 input  :  text from stdin, pipe, or file
 options:  all are optional, order is mostly irrelevant
@@ -179,6 +180,7 @@ options:  all are optional, order is mostly irrelevant
  p #      - output precision after decimal point (default 4)
  r # r #  - correlate two columns, report Pearson r, Fisher Z, SE Fisher Z, ratio
  x #      - exclude values below threshold #
+ m #      - minus (difference score): subtract val in col # from the d col prior to descriptive stats
  i        - ignore first line (e.g., header row of column labels)
  _        - [underscore] use _ to separate catagory labels (default = space)
  --factor - build up factor space from t_columns, report empty cells
@@ -214,10 +216,9 @@ for t in tcols:
 
 if filename <> '':
     try:
-        file = open(filename)
-    except:
-        print this_script, "cannot open file:", filename
-        sys.exit(1)
+        file = open(filename, 'rU')
+    except IOError:
+        sys.exit("%s cannot open file: %s" % (this_script, filename))
 else:
     file = sys.stdin
 
