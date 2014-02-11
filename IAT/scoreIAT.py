@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 """Scoring script for MSU-PsychoPy version of IAT task.
 
 Authors: Jeremy R. Gray & Nate Pasmanter, 2013
@@ -22,9 +24,13 @@ def scoreIAT(csvfile, write_file=False):
 
     If write_file=True, will save score to a file 'Scored_' + csvfile.
 
-    A positive D value indicates a "creativity is bad" bias. The way the task
-    is set up, when side == 1, creative and bad are paired first.
-    If side == -1, the opposite is true.
+    A positive D value from this script indicates a bias in favor of
+    "creative bad / practical good". I.e., if RT in blocks with creative+good is
+    longer than RT in blocks with creative+bad, people are more conflicted or
+    hesitant about creative+good.
+    The way the task is set up, when side == 1, creative and bad are paired first.
+    If side == -1, the opposite is true. This pairing is handled by the scoring
+    script.
     """
     # ------------ Thresholds for excluding trials or subjects: ------------
     rt_FAST = 0.300
@@ -135,8 +141,8 @@ def scoreIAT(csvfile, write_file=False):
     mean3, mean4, mean6, mean7 = [a.mean() for a in task_rt]
     stdev36 = task_rt[0].append(task_rt[2]).std() # pooled std of blocks 3 & 6
     stdev47 = task_rt[1].append(task_rt[3]).std() # pooled std of blocks 4 & 7
-    d36 = side * (mean3 - mean6) / stdev36  # side is +1 or -1
-    d47 = side * (mean4 - mean7) / stdev47
+    d36 = side * (mean6 - mean3) / stdev36  # side is +1 or -1
+    d47 = side * (mean7 - mean4) / stdev47
     D_IAT = (d36 + d47) / 2
 
     stats = D_IAT, side, mean3, mean4, mean6, mean7, stdev36, stdev47, warn.strip() or 'None'
